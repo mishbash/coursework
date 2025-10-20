@@ -11,8 +11,8 @@ permissions:
   pull-requests: write
 
 env:
-  WORKDIR: coursework            # папка проекта
-  ROOT_TEX: coursework.tex       # главный .tex внутри WORKDIR
+  WORKDIR: coursework
+  ROOT_TEX: coursework.tex
   OUTPUT_PDF: coursework/coursework.pdf
 
 jobs:
@@ -21,23 +21,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # диагностика путей (полезно оставить)
+      # (опционально, но полезно) быстрый чек путей
       - name: Show .tex files (debug)
         run: |
           echo "WORKDIR=$WORKDIR"
           find . -maxdepth 3 -type f -name "*.tex" -printf "%P\n" | sort || true
           ls -la "$WORKDIR" || true
 
-      # если НЕ используешь minted, можно поставить latexmk_shell_escape: false
-      - name: Compile LaTeX
+      # Собираем ИМЕННО pdflatex (как в твоём файле)
+      - name: Compile LaTeX (pdflatex)
         uses: xu-cheng/latex-action@v4
         with:
           working_directory: ${{ env.WORKDIR }}
           root_file: ${{ env.ROOT_TEX }}
-          latexmk_use_xelatex: true
-          latexmk_shell_escape: true
+          latexmk_use_xelatex: false
+          latexmk_use_lualatex: false
+          latexmk_shell_escape: false   # поставь true, если нужен minted
           os: debian
-          extra_system_packages: "python3-pygments"
+          extra_system_packages: ""     # не нужно ничего дополнительно
+          # latexmk сам сделает нужные проходы и вызовет biber при необходимости
 
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
