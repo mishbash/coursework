@@ -16,13 +16,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Убедимся, что корневой файл на месте
       - name: Assert root file exists
         run: test -f "coursework/coursework.tex"
 
-      # Сборка PDFlatex ИЗ КОРНЯ (важно: без working_directory и без work_in_root_file_dir)
       - name: Compile LaTeX (pdflatex from repo root)
         uses: xu-cheng/latex-action@v4
+        env:
+          TEXINPUTS: ".:coursework:"   # чтобы \input{config.tex} находил coursework/config.tex
+          BIBINPUTS: ".:coursework:"   # чтобы нашёл coursework.bib
+          BSTINPUTS: ".:coursework:"
         with:
           root_file: |
             coursework/coursework.tex
