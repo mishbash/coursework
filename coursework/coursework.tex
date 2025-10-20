@@ -1,8 +1,11 @@
 %!TEX options=-shell-escape
-%!TEX program=pdflatex  % это подсказка для редактора; в CI мы всё равно запускаем XeLaTeX
+%!TEX program=pdflatex  % это подсказка редактору; в CI всё равно XeLaTeX
 
-% Устанавливаем шрифт для всего документа (до memoir!)
-\newcommand*{\memfontpack}{tempora}
+% Было:
+% \newcommand*{\memfontpack}{tempora}
+% Станет (отключаем пакет шрифтов из config):
+\newcommand*{\memfontpack}{}
+
 \input{config.tex}
 
 \documentclass[
@@ -16,18 +19,18 @@
     \Status
 ]{memoir}
 
-% Пакеты
+% --- пакеты, НО без inputenc/fontenc здесь ---
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{tikz}
 \usepackage{ifthen}
 \usepackage{titlesec}
 \usepackage{float}
+\usepackage[main=russian,english]{babel} % одно подключение языков
+\usepackage{enumitem}
 
-
-
-%%%%%%% ВНИМАНИЕ! ИЗМЕНЕНИЕ ПОРЯДКА ПОДКЛЮЧЕНИЯ СТИЛЕЙ МОЖЕТ НАРУШИТЬ РАБОТУ ШАБЛОНА %%%%%%%
-\input{styles/fonts}      % шрифты (без babel внутри)
+% дальше как у вас:
+\input{styles/fonts}
 \input{styles/math}
 \input{styles/text}
 \input{styles/page}
@@ -35,18 +38,13 @@
 \input{styles/table}
 \input{styles/algorithms}
 
-% Оформление библиографии по ГОСТ
 \usepackage[
   backend=biber,
   bibstyle=gost-numeric,
   citestyle=numeric-comp,
   language=auto,
   sorting=none,
-  doi=true,
-  eprint=false,
-  isbn=false,
-  dashed=true,
-  url=true
+  doi=true, eprint=false, isbn=false, dashed=true, url=true
 ]{biblatex}
 \addbibresource{coursework.bib}
 
@@ -54,11 +52,11 @@
 \input{commands}
 
 \begin{document}
-    \input{styles/title}
-    \clearpage
-    \tableofcontents*
-    \clearpage
-    \Source
-    \clearpage
-    \printbibliography
+  \input{styles/title}
+  \clearpage
+  \tableofcontents*
+  \clearpage
+  \Source
+  \clearpage
+  \printbibliography
 \end{document}
