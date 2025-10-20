@@ -11,8 +11,7 @@ permissions:
   pull-requests: write
 
 env:
-  WORKDIR: coursework
-  ROOT_TEX: coursework.tex
+  ROOT_TEX: coursework/coursework.tex
   OUTPUT_PDF: coursework/coursework.pdf
 
 jobs:
@@ -21,37 +20,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Быстрый просмотр структуры
       - name: Show .tex files (debug)
         run: |
-          echo "WORKDIR=$WORKDIR"
           find . -maxdepth 3 -type f -name "*.tex" -printf "%P\n" | sort || true
-          ls -la "$WORKDIR" || true
+          ls -la coursework || true
+          ls -la coursework/mainfiles || true
 
-      # Предупреждение, если в styles/ снова подключили babel/inputenc/fontenc
-      - name: Guard against duplicate language packages
-        run: |
-          hits=$(grep -RInE '\usepackage(\[[^]]*\])?{(babel|inputenc|fontenc)}' coursework/styles || true)
-          if [ -n "$hits" ]; then
-            echo "::warning title=Duplicate language packages detected::"
-            echo "$hits"
-            echo "Языки/кодировки должны подключаться ОДИН РАЗ в coursework.tex"
-          fi
-
-      # Сборка pdflatex (как у тебя локально)
-      - name: Compile LaTeX (pdflatex)
+      - name: Compile LaTeX (pdflatex from repo root)
         uses: xu-cheng/latex-action@v4
         with:
-          working_directory: ${{ env.WORKDIR }}
-          root_file: ${{ env.ROOT_TEX }}
+          root_file: ${{ env.ROOT_TEX }}     # <— собираем из КОРНЯ
           latexmk_use_xelatex: false
           latexmk_use_lualatex: false
-          latexmk_shell_escape: false     # включи true, если используешь minted
-          pre_compile: latexmk -C         # очистить .aux/.bbl/.toc и пр.
+          latexmk_shell_escape: false        # включи true, если нужен minted
+          pre_compile: latexmk -C
           os: debian
           extra_system_packages: ""
 
-      # Готовый PDF как артефакт
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
