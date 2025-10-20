@@ -10,83 +10,36 @@ permissions:
   checks: write
   pull-requests: write
 
+env:
+  WORKDIR: coursework            # папка проекта
+  ROOT_TEX: coursework.tex       # главный файл внутри WORKDIR
+  OUTPUT_PDF: coursework/coursework.pdf
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      # 1) Автопоиск корневого .tex (ищем \documentclass)
-      - name: Detect root .tex
-        id: detect
-        shell: bash
+      # полезно оставить для быстрой отладки путей
+      - name: Show .tex files (debug)
         run: |
-          set -euo pipefail
-          echo "Searching for root .tex…"
-          candidates=$(printf '%s\n' \
-            "main.tex" \
-            "coursework.tex" \
-            $(find . -maxdepth 3 -type f -name '*.tex' -printf '%P\n' | sort))
-          pick=""
-          while IFS= read -r f; do
-            [ -f "$f" ] || continue
-            if grep -q '\\documentclass' "$f"; then
-              pick="$f"
-              break
-            fi
-          done <<< "$candidates"
-
-          if [ -z "$pick" ]; then
-            echo "::error::Не найден корневой .tex (нет файла с \\documentclass). Переименуй главный файл в main.tex или coursework.tex, либо оставь \\documentclass в нём."
-            exit 1
-          fi
-
-          workdir=$(dirname "$pick")
-          [ "$workdir" = "." ] && workdir="."
-          base=$(basename "$pick" .tex)
-
-          echo "ROOT_TEX=$base.tex" >> "$GITHUB_ENV"
-          echo "WORKDIR=$workdir" >> "$GITHUB_ENV"
-          echo "OUTPUT_PDF=${pick%.tex}.pdf" >> "$GITHUB_ENV"
-          echo "Found root: $pick"
-          echo "WORKDIR=$workdir"
-
-      # 2) Для наглядности — что нашли
-      - name: Show files (debug)
-        run: |
-          echo "Root TEX: $ROOT_TEX"
-          echo "Workdir : $WORKDIR"
-          echo "Nearby  :"
+          echo "WORKDIR=$WORKDIR"
+          find . -maxdepth 3 -type f -name "*.tex" -printf "%P\n" | sort || true
           ls -la "$WORKDIR" || true
-          echo "TeX files (3 levels):"
-          find . -maxdepth 3 -type f -name "*.tex" -printf '%P\n' | sort
 
-      # 3) Сборка LaTeX (XeLaTeX; shell-escape на случай minted)
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@v4
         with:
-          root_file: ${{ env.ROOT_TEX }}
           working_directory: ${{ env.WORKDIR }}
+          root_file: ${{ env.ROOT_TEX }}
           latexmk_use_xelatex: true
-          latexmk_shell_escape: true
+          latexmk_shell_escape: true          # отключи (false), если не используешь minted
           os: debian
           extra_system_packages: "python3-pygments"
 
-      # 4) Всегда прикладываем PDF (если собрался) и ВСЕ логи/временные файлы
-      - name: Upload build artifacts
-        if: always()
+      - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
-          name: latex-build
-          path: |
-            ${{ env.OUTPUT_PDF }}
-            ${{ env.WORKDIR }}/**/*.log
-            ${{ env.WORKDIR }}/**/*.blg
-            ${{ env.WORKDIR }}/**/*.bbl
-            ${{ env.WORKDIR }}/**/*.bcf
-            ${{ env.WORKDIR }}/**/*.run.xml
-            ${{ env.WORKDIR }}/**/*.aux
-            ${{ env.WORKDIR }}/**/*.fdb_latexmk
-            ${{ env.WORKDIR }}/**/*.fls
-          if-no-files-found: warn
+          name: pdf
+          path: ${{ env.OUTPUT_PDF }}
