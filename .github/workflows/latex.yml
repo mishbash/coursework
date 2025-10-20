@@ -10,10 +10,6 @@ permissions:
   checks: write
   pull-requests: write
 
-env:
-  ROOT_TEX: coursework/coursework.tex
-  OUTPUT_PDF: coursework/coursework.pdf
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,33 +19,33 @@ jobs:
       # Диагностика путей
       - name: Show .tex files (debug)
         run: |
-          echo "ROOT_TEX=$ROOT_TEX"
           find . -maxdepth 3 -type f -name "*.tex" -printf "%P\n" | sort || true
           ls -la coursework || true
           ls -la coursework/mainfiles || true
 
-      # Явно убеждаемся, что целевой файл существует — иначе падаем раньше latexmk
+      # Проверяем, что целевой файл есть
       - name: Assert root file exists
         run: |
-          test -f "$ROOT_TEX" || { echo "::error file=$ROOT_TEX::Root TeX not found"; exit 1; }
+          test -f "coursework/coursework.tex" || { echo "::error file=coursework/coursework.tex::Root TeX not found"; exit 1; }
 
-      # Сборка pdflatex ИЗ КОРНЯ репозитория
-      - name: Compile LaTeX (pdflatex from repo root)
+      # Сборка pdflatex из КОРНЯ репозитория
+      - name: Compile LaTeX (pdflatex)
         uses: xu-cheng/latex-action@v4
         with:
-          root_file: ${{ env.ROOT_TEX }}      # <- ВАЖНО: абсолютный путь от корня репо
-          work_in_root_file_dir: true         # запуск в папке файла (coursework/)
+          # ВАЖНО: передаём root_file ЯВНО и мультистрокой — так экшен его гарантированно читает
+          root_file: |
+            coursework/coursework.tex
+          work_in_root_file_dir: true     # компилировать в каталоге файла (./coursework)
           latexmk_use_xelatex: false
           latexmk_use_lualatex: false
-          latexmk_shell_escape: false         # включи true, если нужен minted
+          latexmk_shell_escape: false     # включи true, если нужен minted
           pre_compile: |
-            latexmk -C                         # очистка мусора перед сборкой
+            latexmk -C
           os: debian
-          extra_system_packages: ""
 
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
           name: pdf
-          path: ${{ env.OUTPUT_PDF }}
+          path: coursework/coursework.pdf
           if-no-files-found: error
