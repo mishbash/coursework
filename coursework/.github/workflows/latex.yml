@@ -1,0 +1,47 @@
+name: LaTeX CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+env:
+  WORKDIR: coursework            # папка с LaTeX-проектом
+  ROOT_TEX: coursework.tex       # главный .tex внутри WORKDIR
+  OUTPUT_PDF: coursework/coursework.pdf
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Покажем, что реально есть в каталоге (для быстрой отладки)
+      - name: Show .tex files (debug)
+        run: |
+          echo "Working directory = $WORKDIR"
+          find . -maxdepth 3 -type f -name "*.tex" -printf "%P\n" | sort || true
+          ls -la "$WORKDIR" || true
+
+      # Компиляция (XeLaTeX, shell-escape на случай minted)
+      - name: Compile LaTeX
+        uses: xu-cheng/latex-action@v4
+        with:
+          working_directory: ${{ env.WORKDIR }}
+          root_file: ${{ env.ROOT_TEX }}
+          latexmk_use_xelatex: true
+          latexmk_shell_escape: true
+          os: debian
+          extra_system_packages: "python3-pygments"
+
+      # Готовый PDF как артефакт
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf
+          path: ${{ env.OUTPUT_PDF }}
