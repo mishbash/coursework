@@ -12,7 +12,7 @@ permissions:
 
 env:
   WORKDIR: coursework            # папка проекта
-  ROOT_TEX: coursework.tex       # главный файл внутри WORKDIR
+  ROOT_TEX: coursework.tex       # главный .tex внутри WORKDIR
   OUTPUT_PDF: coursework/coursework.pdf
 
 jobs:
@@ -21,20 +21,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # полезно оставить для быстрой отладки путей
+      # диагностика путей (полезно оставить)
       - name: Show .tex files (debug)
         run: |
           echo "WORKDIR=$WORKDIR"
           find . -maxdepth 3 -type f -name "*.tex" -printf "%P\n" | sort || true
           ls -la "$WORKDIR" || true
 
+      # если НЕ используешь minted, можно поставить latexmk_shell_escape: false
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@v4
         with:
           working_directory: ${{ env.WORKDIR }}
           root_file: ${{ env.ROOT_TEX }}
           latexmk_use_xelatex: true
-          latexmk_shell_escape: true          # отключи (false), если не используешь minted
+          latexmk_shell_escape: true
           os: debian
           extra_system_packages: "python3-pygments"
 
