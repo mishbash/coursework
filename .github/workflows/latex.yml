@@ -16,34 +16,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Диагностика
-      - name: Show structure (debug)
-        run: |
-          pwd
-          ls -la
-          echo "---- coursework ----"
-          ls -la coursework || true
-          echo "---- coursework/mainfiles ----"
-          ls -la coursework/mainfiles || true
-
-      # Проверяем наличие главного файла
+      # Убедимся, что корневой файл на месте
       - name: Assert root file exists
-        run: |
-          test -f "coursework/coursework.tex" || { echo "::error file=coursework/coursework.tex::Root TeX not found"; exit 1; }
+        run: test -f "coursework/coursework.tex"
 
-      # Сборка ВНУТРИ папки coursework (pdflatex)
-      - name: Compile LaTeX (pdflatex in coursework/)
+      # Сборка PDFlatex ИЗ КОРНЯ (важно: без working_directory и без work_in_root_file_dir)
+      - name: Compile LaTeX (pdflatex from repo root)
         uses: xu-cheng/latex-action@v4
         with:
-          working_directory: coursework     # <-- заходим в папку проекта
-          root_file: coursework.tex         # <-- короткое имя файла
+          root_file: |
+            coursework/coursework.tex
           latexmk_use_xelatex: false
           latexmk_use_lualatex: false
-          latexmk_shell_escape: false       # включи true, если используешь minted
-          pre_compile: latexmk -C           # очистка мусора перед сборкой
+          latexmk_shell_escape: false   # включи true, если используешь minted
           os: debian
 
-      # Готовый PDF
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
