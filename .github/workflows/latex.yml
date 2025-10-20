@@ -20,20 +20,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Диагностика путей
       - name: Show .tex files (debug)
         run: |
+          echo "ROOT_TEX=$ROOT_TEX"
           find . -maxdepth 3 -type f -name "*.tex" -printf "%P\n" | sort || true
           ls -la coursework || true
           ls -la coursework/mainfiles || true
 
+      # Явно убеждаемся, что целевой файл существует — иначе падаем раньше latexmk
+      - name: Assert root file exists
+        run: |
+          test -f "$ROOT_TEX" || { echo "::error file=$ROOT_TEX::Root TeX not found"; exit 1; }
+
+      # Сборка pdflatex ИЗ КОРНЯ репозитория
       - name: Compile LaTeX (pdflatex from repo root)
         uses: xu-cheng/latex-action@v4
         with:
-          root_file: ${{ env.ROOT_TEX }}     # <— собираем из КОРНЯ
+          root_file: ${{ env.ROOT_TEX }}      # <- ВАЖНО: абсолютный путь от корня репо
+          work_in_root_file_dir: true         # запуск в папке файла (coursework/)
           latexmk_use_xelatex: false
           latexmk_use_lualatex: false
-          latexmk_shell_escape: false        # включи true, если нужен minted
-          pre_compile: latexmk -C
+          latexmk_shell_escape: false         # включи true, если нужен minted
+          pre_compile: |
+            latexmk -C                         # очистка мусора перед сборкой
           os: debian
           extra_system_packages: ""
 
